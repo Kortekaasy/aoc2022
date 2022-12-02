@@ -16,39 +16,51 @@ pub fn parse_input(input: String) -> ParsedInput {
 }
 
 pub fn part1(input: &ParsedInput) -> impl Display {
-    input.iter().map(|(theirs, ours)| {
-        // For every game, compute score based on their move and our move
-        match (theirs, ours) {
-            ('A', 'X') => 1 + 3, // rock + draw
-            ('A', 'Y') => 2 + 6, // paper + win
-            ('A', 'Z') => 3 + 0, // scissors + loss
-            ('B', 'X') => 1 + 0, // rock + loss
-            ('B', 'Y') => 2 + 3, // paper + draw
-            ('B', 'Z') => 3 + 6, // scissors + win
-            ('C', 'X') => 1 + 6, // rock + win
-            ('C', 'Y') => 2 + 0, // paper + loss
-            ('C', 'Z') => 3 + 3, // scissors + draw
-            ( _ ,  _ ) => panic!("Invalid move!")
-        }
-    }).sum::<i32>()
+    // Compute lookup table (LUT) for all 9 different scenarios based on their
+    // on their move and our move
+    let mut LUT: [i16; 6031] = [0;6031];
+    LUT[('A' as usize) * ('X' as usize)] = 1 + 3; // rock + draw;
+    LUT[('A' as usize) * ('Y' as usize)] = 2 + 6; // paper + win;
+    LUT[('A' as usize) * ('Z' as usize)] = 3 + 0; // scissors + loss;
+    LUT[('B' as usize) * ('X' as usize)] = 1 + 0; // rock + loss;
+    LUT[('B' as usize) * ('Y' as usize)] = 2 + 3; // paper + draw;
+    LUT[('B' as usize) * ('Z' as usize)] = 3 + 6; // scissors + win;
+    LUT[('C' as usize) * ('X' as usize)] = 1 + 6; // rock + win;
+    LUT[('C' as usize) * ('Y' as usize)] = 2 + 0; // paper + loss;
+    LUT[('C' as usize) * ('Z' as usize)] = 3 + 3; // scissors + draw;
+
+    // Loop through input and compute score
+    input.iter()
+        // Compute index in LUT
+        .map(|&(theirs, ours)| (theirs as usize) * (ours as usize))
+        // Get value from LUT
+        .map(|i| LUT[i])
+        // Compute sum
+        .sum::<i16>()
 }
 
 pub fn part2(input: &ParsedInput) -> impl Display {
-    input.iter().map(|(theirs, ours)| {
-        // For every game, compute score based on their move and desired outcome
-        match (theirs, ours) {
-            ('A', 'X') => 3 + 0, // scissors + loss
-            ('A', 'Y') => 1 + 3, // rock + draw
-            ('A', 'Z') => 2 + 6, // paper + win
-            ('B', 'X') => 1 + 0, // rock + loss
-            ('B', 'Y') => 2 + 3, // paper + draw
-            ('B', 'Z') => 3 + 6, // scissors + win
-            ('C', 'X') => 2 + 0, // paper + loss
-            ('C', 'Y') => 3 + 3, // scissors + draw
-            ('C', 'Z') => 1 + 6, // rock + win
-            ( _ ,  _ ) => panic!("Invalid move!")
-        }
-    }).sum::<i32>()
+    // Compute lookup table (LUT) for all 9 different scenarios based on their
+    // on their move and the desired outcome.
+    let mut LUT: [i16; 6031] = [0;6031];
+    LUT[('A' as usize) * ('X' as usize)] = 3 + 0; // scissors + loss
+    LUT[('A' as usize) * ('Y' as usize)] = 1 + 3; // rock + draw
+    LUT[('A' as usize) * ('Z' as usize)] = 2 + 6; // paper + win
+    LUT[('B' as usize) * ('X' as usize)] = 1 + 0; // rock + loss
+    LUT[('B' as usize) * ('Y' as usize)] = 2 + 3; // paper + draw
+    LUT[('B' as usize) * ('Z' as usize)] = 3 + 6; // scissors + win
+    LUT[('C' as usize) * ('X' as usize)] = 2 + 0; // paper + loss
+    LUT[('C' as usize) * ('Y' as usize)] = 3 + 3; // scissors + draw
+    LUT[('C' as usize) * ('Z' as usize)] = 1 + 6; // rock + win
+
+    // Loop through input and compute score
+    input.iter()
+        // Compute index in LUT
+        .map(|&(theirs, ours)| (theirs as usize) * (ours as usize))
+        // Get value from LUT
+        .map(|i| LUT[i])
+        // Compute sum
+        .sum::<i16>()
 }
 
 // =========================== Main Function ============================
