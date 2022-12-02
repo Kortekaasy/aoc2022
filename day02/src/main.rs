@@ -4,7 +4,7 @@ use std::fmt::Display;
 // Define your own output type here for the `parse_input` function.
 type ParsedInput = Vec<(char, char)>;
 
-pub fn parse_input(input: String) -> ParsedInput {
+pub fn parse_input(input: &str) -> ParsedInput {
     input.lines()
         .map(|l| {
             // Take first and third characters from line as moves
@@ -67,8 +67,8 @@ pub fn part2(input: &ParsedInput) -> impl Display {
 #[allow(dead_code)]
 fn main() {
     // Parse sample and challenge input
-    let sample = parse_input(read_file("sample"));
-    let input = parse_input(read_file("input"));
+    let sample = parse_input(&read_file("sample"));
+    let input = parse_input(&read_file("input"));
 
     // Part 1
     // Define sample answer
