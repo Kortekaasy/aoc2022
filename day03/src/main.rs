@@ -1,5 +1,4 @@
 use std::fmt::Display;
-use std::collections::{HashMap, HashSet};
 
 // ========================= Challenge Logic ============================
 // Define your own output type here for the `parse_input` function.
@@ -9,42 +8,53 @@ pub fn parse_input(input: &str) -> ParsedInput {
     input.lines().map(|l|l.into()).collect()
 }
 
+
+pub fn char_to_usize(input: char) -> usize {
+    // Convert a char to an usize (for shifting) using the mapping specified in the challenge
+    if ('a'..='z').contains(&input) {
+        input as usize - 'a' as usize
+    } else {
+        (input as usize - 'A' as usize) + 26
+    }
+}
+
 pub fn part1(input: &ParsedInput) -> impl Display {
-    let mut priority_map: HashMap<char,i32> = HashMap::new();
-    for i in 0..26 {
-        priority_map.insert((('a' as u8) + i) as char, (i + 1).into());
-    }
-    for i in 0..26 {
-        priority_map.insert((('A' as u8) + i) as char, (i + 1 + 26).into());
-    }
 
     input.iter().map(|l| {
+        // Compute mid-point of current entry
         let mid = l.len() / 2;
-        let first = l.chars().take(mid).collect::<HashSet<char>>();
-        let second = l.chars().skip(mid).collect::<HashSet<char>>();
-        let common = first.intersection(&second).next().expect("Expected common element!");
-        priority_map[common]
-    }).sum::<i32>()
+        
+        // Take chars of first half, convert to a bit-position in an u64, and compute the logical OR of all bit-positions.
+        let first = l.chars().take(mid).map(char_to_usize).map(|shift| 1_u64 << shift).reduce(|acc, e| {acc | e}).unwrap();
+        // Take chars of second half, convert to a bit-position in an u64, and compute the logical OR of all bit-positions.
+        let second = l.chars().skip(mid).map(char_to_usize).map(|shift| 1_u64 << shift).reduce(|acc, e| {acc | e}).unwrap();
+        
+        // The common bit of the two halves is then the logical AND of the two aggregations
+        let common = first & second;
+
+        // Compute score by taking the trailing zero's and adding 1
+        common.trailing_zeros() + 1
+    }).sum::<u32>()
 }
 
 pub fn part2(input: &ParsedInput) -> impl Display {
-    let mut priority_map: HashMap<char,i32> = HashMap::new();
-    for i in 0..26 {
-        priority_map.insert((('a' as u8) + i) as char, (i + 1).into());
-    }
-    for i in 0..26 {
-        priority_map.insert((('A' as u8) + i) as char, (i + 1 + 26).into());
-    }
 
+    // We step through the input in groups of 3 lines by using slice.windows(3), and stepping through the iterator with
+    // steps of 3.
     input.windows(3).step_by(3).map(|w| {
-        let first = w[0].chars().collect::<HashSet<char>>();
-        let second = w[1].chars().collect::<HashSet<char>>();
-        let third = w[2].chars().collect::<HashSet<char>>();
-        let cmn = second.intersection(&third).cloned().collect::<HashSet<char>>();
-        let mut common = first.intersection(&cmn);
-        let badge = common.next().expect("Expected common element");
-        priority_map[badge]
-    }).sum::<i32>()
+        // Take chars of first line, convert to a bit-position in an u64, and compute the logical OR of all bit-positions.
+        let first = w[0].chars().map(char_to_usize).map(|shift| 1_u64 << shift).reduce(|acc, e| {acc | e}).unwrap();
+        // Take chars of second line, convert to a bit-position in an u64, and compute the logical OR of all bit-positions.
+        let second = w[1].chars().map(char_to_usize).map(|shift| 1_u64 << shift).reduce(|acc, e| {acc | e}).unwrap();
+        // Take chars of third line, convert to a bit-position in an u64, and compute the logical OR of all bit-positions.
+        let third = w[2].chars().map(char_to_usize).map(|shift| 1_u64 << shift).reduce(|acc, e| {acc | e}).unwrap();
+        
+        // The common bit of the three lines is then the logical AND of the three aggregations
+        let common = first & second & third;
+
+        // Compute score by taking the trailing zero's and adding 1
+        common.trailing_zeros() + 1
+    }).sum::<u32>()
 }
 
 // =========================== Main Function ============================
