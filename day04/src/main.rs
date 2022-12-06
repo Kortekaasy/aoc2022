@@ -27,11 +27,14 @@ pub fn part1(input: &ParsedInput) -> impl Display {
 
 pub fn part2(input: &ParsedInput) -> impl Display {
     input.iter()
+    // .filter(|((ll, lr), (rl,rr))| {
+    //        (ll <= rl && rl <= lr) // left edge of right interval is contained in left interval
+    //     || (ll <= rr && rr <= lr) // right edge of right interval is contained in left interval
+    //     || (rl <= ll && ll <= rr) // left edge of left interval is contained in right interval
+    //     || (rl <= lr && lr <= rr) // right edge of left interval is contained in right interval
+    // })
     .filter(|((ll, lr), (rl,rr))| {
-           (ll <= rl && rl <= lr) // left edge of right interval is contained in left interval
-        || (ll <= rr && rr <= lr) // right edge of right interval is contained in left interval
-        || (rl <= ll && ll <= rr) // left edge of left interval is contained in right interval
-        || (rl <= lr && lr <= rr) // right edge of left interval is contained in right interval
+        lr >= rl && ll <= rr
     })
     .count()
 }
