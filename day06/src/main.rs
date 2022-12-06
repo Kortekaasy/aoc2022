@@ -1,70 +1,51 @@
 use std::fmt::Display;
+use itertools::Itertools;
 
 // ========================= Challenge Logic ============================
 // Define your own output type here for the `parse_input` function.
-type ParsedInput = Vec<u32>;
+type ParsedInput<'a> = &'a str;
 
-#[inline(always)]
-pub fn char_to_shift(c: &u8) -> usize {
-    // Convert a ascii character (u8) to a bitshift where 'a' = 0 and 'z' = 25
-    (*c - b'a') as usize
-}
+// #[inline(always)]
+// pub fn char_to_shift(c: &u8) -> usize {
+//     // Convert a ascii character (u8) to a bitshift where 'a' = 0 and 'z' = 25
+//     (*c - b'a') as usize
+// }
 
 pub fn parse_input(input: &str) -> ParsedInput {
-    // Take input as byte, iterate over them
-    input.as_bytes().iter()
-    // Map each character to a bitshift
-    .map(char_to_shift)
-    // Leftshift 0x00000001 by the calculated bitshift
-    .map(|shift| 1_u32 << shift)
-    // Collect the shifted values
-    .collect()
+    // // Take input as byte, iterate over them
+    // input.as_bytes().iter()
+    // // Map each character to a bitshift
+    // .map(char_to_shift)
+    // // Leftshift 0x00000001 by the calculated bitshift
+    // .map(|shift| 1_u32 << shift)
+    // // Collect the shifted values
+    // .collect()
+    input
 }
 
-pub fn part1(input: &ParsedInput) -> impl Display {
-    // Set size of window as variable
-    let window_size: u32 = 4;
-
-    // Go over the input in windows of `window_size`
-    let (i, _ ) = input.windows(window_size as usize)
-    // For each window, calculate the xor of all bitshifted values in the window
-    .map(|window| window.iter().fold( 0, |acc, &e| acc ^ e))
-    // Get the index for each entry
-    .enumerate()
-    // Find the first entry the number of ones is equal to `window_size`
-    .find(|&(_i, e)| e.count_ones() == window_size)
-    .expect("find");
-
-    // Because we went over the input in windows, we need to add `window_size`
-    // to get to the right answer
-    i + window_size as usize
+fn find_marker(input: &str, n: usize) -> usize {
+    let input = input.trim().chars().collect_vec();
+    input.windows(n).enumerate()
+        .filter(|(_, window)| window.into_iter().all_unique())
+        .map(|(i, _)| i + n)
+        .next().unwrap()
+}
+pub fn part1(input: ParsedInput) -> impl Display {
+    find_marker(input, 4)
 }
 
-pub fn part2(input: &ParsedInput) -> impl Display {
-    // Set size of window as variable
-    let window_size: u32 = 14;
-
-    // Go over the input in windows of `window_size`
-    let (i, _ ) = input.windows(window_size as usize)
-    // For each window, calculate the xor of all bitshifted values in the window
-    .map(|window| window.iter().fold( 0, |acc, &e| acc ^ e))
-    // Get the index for each entry
-    .enumerate()
-    // Find the first entry the number of ones is equal to `window_size`
-    .find(|&(_i, e)| e.count_ones() == window_size)
-    .expect("find");
-
-    // Because we went over the input in windows, we need to add `window_size`
-    // to get to the right answer
-    i + window_size as usize
+pub fn part2(input: ParsedInput) -> impl Display {
+    find_marker(input, 14)
 }
 
 // =========================== Main Function ============================
 #[allow(dead_code)]
 fn main() {
     // Parse sample and challenge input
-    let sample = parse_input(&read_file("sample"));
-    let input = parse_input(&read_file("input"));
+    let sample_string = read_file("sample");
+    let sample = parse_input(&sample_string);
+    let input_string = read_file("input");
+    let input = parse_input(&input_string);
 
     // Part 1
     // Define sample answer
