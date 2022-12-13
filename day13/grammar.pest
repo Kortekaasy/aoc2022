@@ -1,0 +1,15 @@
+WHITESPACE = _{ " " }
+newline = _{ "\r\n" | "\n" }
+
+num = { ASCII_DIGIT+ }
+
+LPAREN = _{ "[" }
+RPAREN = _{ "]" }
+
+list = { 
+	LPAREN ~ RPAREN | 
+	LPAREN ~ (num | list) ~ RPAREN | 
+	LPAREN ~ (num | list) ~ ("," ~ (num | list))* ~ RPAREN 
+}
+
+lists = { SOI ~ list ~ ( (newline)+ ~ list)* ~ EOI }
