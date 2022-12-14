@@ -1,3 +1,5 @@
+extern crate fxhash;
+
 use std::fmt::Display;
 
 mod main;

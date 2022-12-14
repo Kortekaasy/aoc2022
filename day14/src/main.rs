@@ -1,5 +1,6 @@
 use std::{fmt::Display, ops::{Add, AddAssign, Sub, SubAssign}};
-use std::collections::HashMap;
+// use std::collections::HashMap;
+use fxhash::FxHashMap as HashMap;
 
 // ========================= Challenge Logic ============================
 // Define your own output type here for the `parse_input` function.
@@ -62,7 +63,8 @@ pub fn parse_input(input: &str) -> ParsedInput {
     .collect::<Vec<Vec<Coord>>>();
 
     // Construct Board
-    let mut board: HashMap<Coord, State> = HashMap::with_capacity(1024);
+    let mut board: HashMap<Coord, State> = HashMap::default();
+    board.reserve(1024);
 
     // Get y range of input & insert rock into board
     let mut max_y = 0;
