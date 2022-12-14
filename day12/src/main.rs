@@ -7,36 +7,38 @@ use std::ops::Index;
 
 
 #[derive(Clone, Debug)]
-pub struct Graph {
-    nodes: Vec<i32>,
-    rev_edges: Vec<Vec<(usize, i32)>>,
+pub struct Graph<const N: usize> {
+    nodes: [i32; N],
+    rev_edges: [[Option<(usize, i32)>; 4]; N],
     start: usize,
     end: usize,
 }
 
-impl Graph {
+impl<const N: usize> Graph<N> {
 
-    pub fn new(capacity: usize) -> Graph {
-        Graph { nodes: Vec::with_capacity(capacity), 
-            rev_edges: vec![Vec::with_capacity(4); capacity], start: 0, end: 0 }
+    pub fn new() -> Graph<N> {
+        Graph { nodes: [0; N], 
+            rev_edges: [[None; 4]; N], start: 0, end: 0 }
     }
 
-    pub fn add_node(&mut self, val: u8) -> i32 {
-        let val_i32 = if val == b'S' {
-            self.start = self.nodes.len();
-            b'a' as i32
-        } else if val == b'E' {
-            self.end = self.nodes.len();
-            b'z' as i32
-        } else {
-            val as i32
-        };
-        self.nodes.push(val_i32);
-        val_i32
+    pub fn add_nodes(&mut self, vals: &[i32]) {
+        for (i, &val) in vals.iter().enumerate() {
+            let val_i32 = if val == 83 {
+                self.start = i;
+                0
+            } else if val == 69 {
+                self.end = i;
+                25
+            } else {
+                val - 97
+            };
+            self.nodes[i] = val_i32;
+        }
     }
 
-    pub fn add_edge(&mut self, from: usize, to: usize, weight: i32) {
-        self.rev_edges[to].push((from, weight));
+    pub fn add_edge(&mut self, from: usize, to: usize, weight: i32, i: usize) {
+        self.rev_edges[to][i] = Some((from, weight));
+        // push((from, weight));
     }
 
     pub fn shortest_paths(&self) -> Vec<i32> {
@@ -47,19 +49,23 @@ impl Graph {
         queue.push(self.end, 0);
 
         while let Some(u) = queue.head() {
-            for (from, weight) in self.rev_edges[u].iter() {
-                let alt = dist[u] + weight;
-                if alt < dist[*from] {
-                    dist[*from] = alt;
-                    queue.push(*from, alt);
+            for neighbour in self.rev_edges[u].iter() {
+                if let Some((from, weight)) = neighbour {
+                    let alt = dist[u] + weight;
+                    if alt < dist[*from] {
+                        dist[*from] = alt;
+                        queue.push(*from, alt);
+                    }
                 }
             }
         }
+
+        // println!("{:?}", dist);
         dist
     }
 }
 
-impl Index<usize> for Graph {
+impl<const N: usize> Index<usize> for Graph<N> {
     type Output = i32;
 
     fn index(&self, index: usize) -> &Self::Output {
@@ -133,37 +139,45 @@ impl<T> PriorityQueue<T> {
     }
 }
 
-type ParsedInput = Graph;
+type ParsedInput<const N: usize> = Graph<N>;
 
-pub fn parse_input(input: &str) -> ParsedInput {
-    let mut g = Graph::new(input.len());
+pub fn parse_input<const N: usize>(input: &str) -> ParsedInput<N> {
+    let mut g = Graph::<N>::new();
 
-    let nodes = input.lines().map(|l|
+    let nodes: [i32; N] = input.lines().map(|l|
         l.as_bytes().iter().map(|&b|
-            g.add_node(b)
+            b as i32
         )
         .collect::<Vec<i32>>()
-    ).collect::<Vec<Vec<i32>>>();
+    )
+    .flatten()
+    .collect::<Vec<i32>>().try_into().unwrap();
 
-    let h = nodes.len();
-    let w = nodes[0].len();
+    g.add_nodes(&nodes);
+
+    let h = input.lines().count();
+    let w = N / h;
 
     for j in 0..h {
         for i in 0..w {
-            if j != 0 && (nodes[j-1][i] - nodes[j][i]) < 2 {
-                g.add_edge(j * w + i, (j-1) * w + i, 1)
+            if j != 0 && (g[(j-1) * w + i] - g[j * w + i]) < 2 {
+                // println!("({}, {}) -> ({}, {})", i, j, i, j + 1);
+                g.add_edge(j * w + i, (j-1) * w + i, 1, 0)
             }
 
-            if j != h - 1 && (nodes[j+1][i] - nodes[j][i]) < 2 {
-                g.add_edge(j * w + i, (j+1) * w + i, 1)
+            if j != h - 1 && (g[(j+1) * w + i] - g[j * w + i]) < 2 {
+                // println!("({}, {}) -> ({}, {})", i, j, i, j + 1);
+                g.add_edge(j * w + i, (j+1) * w + i, 1, 2)
             }
 
-            if i != 0 && (nodes[j][i-1] - nodes[j][i]) < 2 {
-                g.add_edge(j * w + i, j * w + i - 1, 1)
+            if i != 0 && (g[j * w + i - 1] - g[j * w + i]) < 2 {
+                // println!("({}, {}) -> ({}, {})", i, j, i, j + 1);
+                g.add_edge(j * w + i, j * w + i - 1, 1, 1)
             }
 
-            if i != w - 1 && (nodes[j][i+1] - nodes[j][i]) < 2 {
-                g.add_edge(j * w + i, j * w + i + 1, 1)
+            if i != w - 1 && (g[j * w + i + 1] - g[j * w + i]) < 2 {
+                // println!("({}, {}) -> ({}, {})", i, j, i, j + 1);
+                g.add_edge(j * w + i, j * w + i + 1, 1, 3)
             }
         }
     }
@@ -171,14 +185,14 @@ pub fn parse_input(input: &str) -> ParsedInput {
     g
 }
 
-pub fn part1(g: &ParsedInput) -> impl Display {
+pub fn part1<const N: usize>(g: &ParsedInput<N>) -> impl Display {
     g.shortest_paths()[g.start]
 }
 
-pub fn part2(g: &ParsedInput) -> impl Display {
+pub fn part2<const N: usize>(g: &ParsedInput<N>) -> impl Display {
     g.shortest_paths().into_iter()
     .enumerate()
-    .filter(|&(i, _e)| g[i] == (b'a' as i32))
+    .filter(|&(i, _e)| g[i] == 0)
     .map(|(_i, e)| e)
     .min().unwrap()
 }
@@ -187,8 +201,8 @@ pub fn part2(g: &ParsedInput) -> impl Display {
 #[allow(dead_code)]
 fn main() {
     // Parse sample and challenge input
-    let sample = parse_input(&read_file("sample"));
-    let input = parse_input(&read_file("input"));
+    let sample = parse_input::<40>(&read_file("sample"));
+    let input = parse_input::<6847>(&read_file("input"));
 
     // Part 1
     // Define sample answer
@@ -199,6 +213,7 @@ fn main() {
 
     // If sample input evaluated correctly, print output of part 1 with 
     // challenge output.
+
     formatted_print("1", part1(&input));
 
     // Part 2

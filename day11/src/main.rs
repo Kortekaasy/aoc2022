@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, cell::{RefCell, RefMut}};
 
 // ========================= Challenge Logic ============================
 // Define your own output type here for the `parse_input` function.
@@ -22,7 +22,8 @@ pub struct Monkey {
 }
 
 impl Monkey {
-    pub fn new(items: Vec<i64>, update: Op, test: i64, true_monkey: usize, false_monkey: usize) -> Monkey {
+    pub fn new(mut items: Vec<i64>, update: Op, test: i64, true_monkey: usize, false_monkey: usize) -> Monkey {
+        items.reserve(40);
         Monkey { 
             items,
             update,
@@ -42,9 +43,11 @@ impl Monkey {
         self.items.extend(items)
     }
 
-    pub fn action(&mut self) -> (Vec<i64>, Vec<i64>) {
-        let mut to_true_monkey = Vec::new();
-        let mut to_false_monkey = Vec::new();
+    pub fn push(&mut self, item: i64) {
+        self.items.push(item)
+    }
+
+    pub fn action(&mut self, mut t_monkey: RefMut<Monkey>, mut f_monkey: RefMut<Monkey>) {
         self.inspected += self.items.len();
         for item in self.items.drain(..) {
             let updated = match self.update {
@@ -55,17 +58,14 @@ impl Monkey {
             } / 3;
 
             if (updated % self.test) == 0 {
-                to_true_monkey.push(updated % 96577);
+                t_monkey.push(updated);
             } else {
-                to_false_monkey.push(updated % 96577);
+                f_monkey.push(updated);
             }
         } 
-        (to_true_monkey, to_false_monkey)
     }
 
-    pub fn action2(&mut self) -> (Vec<i64>, Vec<i64>) {
-        let mut to_true_monkey = Vec::new();
-        let mut to_false_monkey = Vec::new();
+    pub fn action2(&mut self, mut t_monkey: RefMut<Monkey>, mut f_monkey: RefMut<Monkey>) {
         self.inspected += self.items.len();
         for item in self.items.drain(..) {
             let updated = match self.update {
@@ -76,16 +76,17 @@ impl Monkey {
             } % self.reduction;
 
             if (updated % self.test) == 0 {
-                to_true_monkey.push(updated);
+                t_monkey.push(updated);
             } else {
-                to_false_monkey.push(updated);
+                f_monkey.push(updated);
             }
         } 
-        (to_true_monkey, to_false_monkey)
+        // (to_true_monkey, to_false_monkey)
     }
 }
 
-type ParsedInput = Vec<Monkey>;
+
+type ParsedInput = Vec<RefCell<Monkey>>;
 
 pub fn parse_input(input: &str) -> ParsedInput {
     input.split("\n\n")
@@ -111,7 +112,7 @@ pub fn parse_input(input: &str) -> ParsedInput {
         let true_monkey = lines[4].rsplit_once(" ").unwrap().1.parse::<usize>().expect("true_monkey");
         let false_monkey = lines[5].rsplit_once(" ").unwrap().1.parse::<usize>().expect("false_monkey");
 
-        Monkey::new(starting_items, update, test, true_monkey, false_monkey)
+        RefCell::new(Monkey::new(starting_items, update, test, true_monkey, false_monkey))
     })
     .collect()
 }
@@ -121,20 +122,18 @@ pub fn part1(input: &ParsedInput) -> impl Display {
     let rounds = 20;
 
     // Compute & set reduction
-    let reduction = monkeys.iter().fold(1, |acc, e| acc * e.test);
-    monkeys.iter_mut().for_each(|m| m.set_reduction(reduction));
+    let reduction = monkeys.iter().fold(1, |acc, e| acc * e.borrow().test);
+    monkeys.iter_mut().for_each(|m| m.borrow_mut().set_reduction(reduction));
 
     for _i in 0..rounds {
         for i in 0..monkeys.len() {
-            let true_monkey = monkeys[i].true_monkey;
-            let false_monkey = monkeys[i].false_monkey;
-            let (to_true_monkey, to_false_monkey) = monkeys[i].action();
-            monkeys[true_monkey].add_items(to_true_monkey);
-            monkeys[false_monkey].add_items(to_false_monkey);
+            let true_monkey = monkeys[i].borrow().true_monkey;
+            let false_monkey = monkeys[i].borrow().false_monkey;
+            monkeys[i].borrow_mut().action(monkeys[true_monkey].borrow_mut(),  monkeys[false_monkey].borrow_mut());
         }
 
     }
-    let mut inspected = monkeys.iter().map(|m| m.inspected).collect::<Vec<usize>>();
+    let mut inspected = monkeys.iter().map(|m| m.borrow().inspected).collect::<Vec<usize>>();
     inspected.sort();
 
     inspected[inspected.len() - 1] * inspected[inspected.len() - 2]
@@ -145,20 +144,19 @@ pub fn part2(input: &ParsedInput) -> impl Display {
     let rounds = 10_000;
 
     // Compute & set reduction
-    let reduction = monkeys.iter().fold(1, |acc, e| acc * e.test);
-    monkeys.iter_mut().for_each(|m| m.set_reduction(reduction));
+    let reduction = monkeys.iter().fold(1, |acc, e| acc * e.borrow().test);
+    monkeys.iter_mut().for_each(|m| m.borrow_mut().set_reduction(reduction));
 
     for _i in 0..rounds {
         for i in 0..monkeys.len() {
-            let true_monkey = monkeys[i].true_monkey;
-            let false_monkey = monkeys[i].false_monkey;
-            let (to_true_monkey, to_false_monkey) = monkeys[i].action2();
-            monkeys[true_monkey].add_items(to_true_monkey);
-            monkeys[false_monkey].add_items(to_false_monkey);
+            let true_monkey = monkeys[i].borrow().true_monkey;
+            let false_monkey = monkeys[i].borrow().false_monkey;
+            monkeys[i].borrow_mut().action2(monkeys[true_monkey].borrow_mut(),  monkeys[false_monkey].borrow_mut());
+
         }
 
     }
-    let mut inspected = monkeys.iter().map(|m| m.inspected).collect::<Vec<usize>>();
+    let mut inspected = monkeys.iter().map(|m| m.borrow().inspected).collect::<Vec<usize>>();
     inspected.sort();
 
     inspected[inspected.len() - 1] * inspected[inspected.len() - 2]

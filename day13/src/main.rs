@@ -1,7 +1,6 @@
-use std::{fmt::Display, rc::Rc, cell::RefCell, ops::Deref, cmp::Ordering};
+use std::{fmt::Display, ops::Deref, cmp::Ordering};
 use pest_derive::Parser;
 use pest::{Parser, iterators::Pair};
-use std::iter::zip;
 
 
 // ========================= Challenge Logic ============================
@@ -49,13 +48,6 @@ impl Deref for List {
 
 type ParsedInput = Vec<List>;
 
-// pub fn parse_line(line: &[u8]) -> List {
-//     let chars = line.as_bytes();
-//     match chars[1] {
-//         b'[' => todo!()
-//     }
-// }
-
 pub fn parse_list(pair: Pair<Rule>) -> List {
     let mut list = List::new();
     for r in pair.into_inner() {
@@ -67,8 +59,7 @@ pub fn parse_list(pair: Pair<Rule>) -> List {
             Rule::lists |
             Rule::EOI |
             Rule::WHITESPACE |
-            Rule::
-            newline => panic!("Found {}", r),
+            Rule::newline => panic!("Found {}", r),
         }
     }
 
