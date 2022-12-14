@@ -100,25 +100,18 @@ pub fn part1(input: &ParsedInput) -> impl Display {
 
 pub fn part2(input: &ParsedInput) -> impl Display {
 
-    let div1 = List::from_item(ListItem::List(Box::new(List::from_item(ListItem::Integer(2)))));
-    let div2 = List::from_item(ListItem::List(Box::new(List::from_item(ListItem::Integer(6)))));
-    // let div1 = parse_input("[[2]]").into_iter().next().unwrap();
-    // let div2 = parse_input("[[6]]").into_iter().next().unwrap();
+    let start_div = List::from_item(ListItem::List(Box::new(List::from_item(ListItem::Integer(2)))));
+    let end_div = List::from_item(ListItem::List(Box::new(List::from_item(ListItem::Integer(6)))));
 
-    // let mut l = input.iter().chain(&[div1.clone(), div2.clone()]).cloned().collect::<Vec<List>>();
-    let mut l = input.clone();
-    l.push(div1.clone());
-    l.push(div2.clone());
-    l.sort_by(|a, b| rec_comp(a, b));
+    let start_pos = input.iter()
+    .filter(|list| rec_comp(list, &start_div) == Ordering::Less)
+    .count();
 
-    let vals = l.iter()
-    .enumerate()
-    .filter(|(_i, l)| 
-        rec_comp(l, &div1) == Ordering::Equal || rec_comp(l, &div2) == Ordering::Equal
-    )
-    .map(|(i, _l)| i )
-    .collect::<Vec<usize>>();
-    vals[0] * vals[1]
+    let end_pos = input.iter()
+    .filter(|list| rec_comp(list, &end_div) == Ordering::Less)
+    .count() + 1;
+    
+    start_pos * end_pos
 }
 
 // =========================== Main Function ============================
