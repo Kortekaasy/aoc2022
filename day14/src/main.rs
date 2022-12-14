@@ -1,4 +1,5 @@
-use std::{fmt::Display, ops::{Add, AddAssign, Sub, SubAssign}};
+use core::time;
+use std::{fmt::Display, ops::{Add, AddAssign, Sub, SubAssign}, thread};
 // use std::collections::HashMap;
 use fxhash::FxHashMap as HashMap;
 
@@ -106,16 +107,17 @@ pub fn parse_input(input: &str) -> ParsedInput {
 pub fn part1(input: &ParsedInput) -> impl Display {
     let (mut board, max_y) = (input.0.clone(), input.1);
 
+    // Add a new sand particle
+    let mut history: Vec<Coord> = Vec::with_capacity(1024);
+    let mut sand = Coord(500, 0);
+
     let mut counter = 0;
-    'outer: loop {
+    'falling: loop {
         // Increase sand particle counter
         counter += 1;
 
-        // Add a new sand particle
-        let mut sand = Coord(500, 0);
-
         // Let it fall down
-        for _ in 0..max_y {
+        while sand.1 < max_y {
             // Compute bottom, bottom-left and bottom-right positions.
             let bottom = sand + Coord(0, 1);
             let left = sand + Coord(-1, 1);
@@ -123,17 +125,19 @@ pub fn part1(input: &ParsedInput) -> impl Display {
 
             // See what is in the bottom-left, bottom, and bottom-right positions.
             match (board.get(&left), board.get(&bottom), board.get(&right)) {
-                (_, None, _) => sand = bottom, // If there is nothing in the bottom position, continue there.
-                (None, _, _) => sand = left,   // If there is nothing in the bottom-left position, continue there.
-                (_, _, None) => sand = right,  // If there is nothing in the bottom-right position, continue there.
+                (_, None, _) => {history.push(sand); sand = bottom}, // If there is nothing in the bottom position, continue there.
+                (None, _, _) => {history.push(sand); sand = left},   // If there is nothing in the bottom-left position, continue there.
+                (_, _, None) => {history.push(sand); sand = right},  // If there is nothing in the bottom-right position, continue there.
                 (Some(_), Some(_), Some(_)) => { 
                     // If there is something in all positions, insert a sand particle at the current position
                     board.insert(sand, State::Sand);
-
+                    sand = history.pop().unwrap();
                     // Drop in a new sand particle
-                    continue 'outer;
+                    continue 'falling;
                 },
             }
+
+            
         }
 
         // If the for-loop terminated successfully, it means the sand particle
@@ -145,13 +149,14 @@ pub fn part1(input: &ParsedInput) -> impl Display {
 pub fn part2(input: &ParsedInput) -> impl Display {// Construct Board
     let (mut board, max_y) = (input.0.clone(), input.1);
 
+    // Add a new sand particle
+    let mut history: Vec<Coord> = Vec::with_capacity(1024);
+    let mut sand = Coord(500, 0);
+
     let mut counter = 0;
-    'outer: loop {
+    'falling: loop {
         // Increase sand particle counter
         counter += 1;
-
-        // Add a new sand particle
-        let mut sand = Coord(500, 0);
         
         // Check whether origin is still free
         if board.get(&sand).is_some() {
@@ -159,7 +164,7 @@ pub fn part2(input: &ParsedInput) -> impl Display {// Construct Board
         }
 
         // Let it fall down
-        for _ in 0..(max_y + 1) {
+        while sand.1 < max_y + 1 {
             // Compute bottom, bottom-left and bottom-right positions.
             let bottom = sand + Coord(0, 1);
             let left = sand + Coord(-1, 1);
@@ -167,15 +172,16 @@ pub fn part2(input: &ParsedInput) -> impl Display {// Construct Board
 
             // See what is in the bottom-left, bottom, and bottom-right positions.
             match (board.get(&left), board.get(&bottom), board.get(&right)) {
-                (_, None, _) => sand = bottom, // If there is nothing in the bottom position, continue there.
-                (None, _, _) => sand = left,   // If there is nothing in the bottom-left position, continue there.
-                (_, _, None) => sand = right,  // If there is nothing in the bottom-right position, continue there.
+                (_, None, _) => {history.push(sand); sand = bottom}, // If there is nothing in the bottom position, continue there.
+                (None, _, _) => {history.push(sand); sand = left},   // If there is nothing in the bottom-left position, continue there.
+                (_, _, None) => {history.push(sand); sand = right},  // If there is nothing in the bottom-right position, continue there.
                 (Some(_), Some(_), Some(_)) => { 
                     // If there is something in all positions, insert a sand particle at the current position
                     board.insert(sand, State::Sand);
+                    sand = history.pop().unwrap_or(Coord(500, 0));
 
                     // Drop in a new sand particle
-                    continue 'outer;
+                    continue 'falling;
                 },
             }
         }
@@ -183,6 +189,7 @@ pub fn part2(input: &ParsedInput) -> impl Display {// Construct Board
         // If the for-loop terminated successfully, it means the sand particle
         // has landed on the floor, add it there
         board.insert(sand, State::Sand);
+        sand = history.pop().unwrap_or(Coord(500, 0));
     }
 }
 
